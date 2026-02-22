@@ -22,6 +22,9 @@ public class FileMetadata  {
     private UUID id;
 
     @Column(nullable = false)
+    private String userId;
+
+    @Column(nullable = false)
     private String filename;
 
     @Column(nullable = false)
