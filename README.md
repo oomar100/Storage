@@ -1,4 +1,4 @@
-## High level overview
+## High Level Overview
 
 A cloud-based file storage service that lets users upload, download, and manage files through a web interface. Files are chunked client-side and uploaded directly to S3 via pre-signed URLs, keeping the backend lightweight since it never handles raw file bytes. The backend manages file metadata, orchestrates multipart uploads, and generates temporary access URLs. Authentication is handled through Cognito, with API Gateway validating tokens before requests reach the service. Built with React and Mantine on the frontend, Spring Boot and PostgreSQL on the backend, deployed on AWS using ECS, RDS, S3, CloudFront, API Gateway, and Cognito.
 
