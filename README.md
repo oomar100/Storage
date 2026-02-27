@@ -4,6 +4,12 @@ A cloud-based file storage service that lets users upload, download, and manage 
 
 <img width="1646" height="991" alt="Untitled-2026-02-22-0033(1)" src="https://github.com/user-attachments/assets/c261c641-9bd9-4fd9-aaa7-15bdd564f9e3" />
 
+
+### Demo
+
+[![Watch the demo](https://img.youtube.com/vi/DnfERluEboE/0.jpg)](https://youtu.be/DnfERluEboE)
+
+
 ## Entities
 
 ### FileMetadata
@@ -33,9 +39,20 @@ A cloud-based file storage service that lets users upload, download, and manage 
 | `size` | Long | Chunk size in bytes |
 | `status` | Enum | `PENDING` / `COMPLETED` |
 
+### Folder
+| Field       | Type    | Notes                                                   |
+| ----------- | ------- | ------------------------------------------------------- |
+| `id`        | UUID    | Primary key                                             |
+| `userId`    | String  | Owner                                                   |
+| `name`      | String  | Folder name (not full path)                             |
+| `parentId`  | UUID    | Self-reference → parent `Folder.id` (nullable for root) |
+| `createdAt` | Instant | Folder creation timestamp                               |
+
 ---
 
 ## API Endpoints
+
+### File
 
 | # | Method | Endpoint | Description |
 |---|--------|----------|-------------|
@@ -47,16 +64,28 @@ A cloud-based file storage service that lets users upload, download, and manage 
 | 6 | GET | `/api/files/{fileId}` | Get file details |
 | 7 | DELETE | `/api/files/{fileId}` | Delete file |
 
+
+### Folder
+
+| # | Method | Endpoint                  | Description                              |
+| - | ------ | ------------------------- | ---------------------------------------- |
+| 1 | POST   | `/api/folders`            | Create new folder                        |
+| 2 | GET    | `/api/folders`            | Get root contents                        |
+| 3 | GET    | `/api/folders/{folderId}` | Get folder contents (subfolders + files) |
+| 4 | PUT    | `/api/folders/{folderId}` | Rename folder                            |
+| 5 | DELETE | `/api/folders/{folderId}` | Delete folder (recursive)                |
+
+
 ---
 
 ## Flows
 
-### Upload
+### File Upload
 
 ```
 Step  Action                              Services
 ───── ───────────────────────────────── ──────────────────────
-1     User selects files                  React (CloudFront/S3)
+1     User selects files                  React
 2     React calls POST /api/files         API Gateway → ECS
 3     Spring Boot creates metadata        ECS → RDS
 4     Spring Boot initiates multipart     ECS → S3
@@ -67,29 +96,93 @@ Step  Action                              Services
 9     Metadata status → COMPLETED         ECS → RDS
 ```
 
-### Download
+### File Download
 
 ```
 Step  Action                              Services
 ───── ───────────────────────────────── ──────────────────────
-1     User clicks download                React (CloudFront/S3)
+1     User clicks download                React
 2     React calls GET /{id}/content       API Gateway → ECS
 3     Spring Boot generates GET URL       ECS → S3
 4     Pre-signed download URL returned    ECS → API Gateway → React
 5     React opens URL directly            React → S3
 ```
 
-### Delete
+### File Delete
 
 ```
 Step  Action                              Services
 ───── ───────────────────────────────── ──────────────────────
-1     User clicks delete                  React (CloudFront/S3)
+1     User clicks delete                  React
 2     React calls DELETE /api/files/{id}  API Gateway → ECS
 3     Spring Boot deletes S3 object       ECS → S3
 4     Spring Boot deletes metadata        ECS → RDS
 ```
 
+
+### Create Folder
+```
+Step  Action                                  Services
+───── ────────────────────────────────────── ──────────────────────
+1     User clicks "New Folder"               React
+2     React calls POST /api/folders          API Gateway → ECS
+3     Spring Boot validates parentId         ECS → RDS
+4     Folder entity saved                    ECS → RDS
+5     FolderResponse returned                ECS → API Gateway → React
+```
+
+### List Root Contents
+
+```
+Step  Action                                  Services
+───── ────────────────────────────────────── ──────────────────────
+1     User opens file manager                React
+2     React calls GET /api/folders           API Gateway → ECS
+3     Backend loads folders (parentId=null)  ECS → RDS
+4     Backend loads files (folderId=null)    ECS → RDS
+5     FolderContentsResponse returned        ECS → API Gateway → React
+
+```
+
+### List Folder
+
+```
+Step  Action                                      Services
+───── ────────────────────────────────────────── ──────────────────────
+1     User clicks folder                         React
+2     React calls GET /api/folders/{folderId}    API Gateway → ECS
+3     Backend validates ownership                ECS → RDS
+4     Load subfolders (parentId=folderId)        ECS → RDS
+5     Load files (folderId=folderId)             ECS → RDS
+6     FolderContentsResponse returned            ECS → API Gateway → React
+```
+
+### Rename Folder
+
+```
+Step  Action                                      Services
+───── ────────────────────────────────────────── ──────────────────────
+1     User renames folder                        React
+2     React calls PUT /api/folders/{id}          API Gateway → ECS
+3     Backend validates ownership                ECS → RDS
+4     Update folder.name                         ECS → RDS
+5     Updated FolderResponse returned            ECS → API Gateway → React
+```
+
+### Delete Folder
+```
+Step  Action                                        Services
+───── ──────────────────────────────────────────── ──────────────────────
+1     User clicks delete                           React
+2     React calls DELETE /api/folders/{id}         API Gateway → ECS
+3     Backend validates ownership                  ECS → RDS
+4     Recursively load child folders               ECS → RDS
+5     Collect all descendant files                 ECS → RDS
+6     Delete S3 objects for all files              ECS → S3
+7     Delete file metadata                         ECS → RDS
+8     Delete folders (bottom-up)                   ECS → RDS
+9     204 No Content returned                      ECS → API Gateway → React
+```
 ### Authentication
 
 ```
@@ -100,5 +193,5 @@ Step  Action                              Services
 3     React sends JWT on every request    React → API Gateway
 4     API Gateway validates JWT           API Gateway → Cognito (JWKS)
 5     Request forwarded to backend        API Gateway → ECS
-6     Spring Boot extracts userId (sub)   ECS (Spring Security)
+6     Spring Boot extracts userId (sub)   ECS
 ```
