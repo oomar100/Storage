@@ -195,3 +195,17 @@ Step  Action                              Services
 5     Request forwarded to backend        API Gateway → ECS
 6     Spring Boot extracts userId (sub)   ECS
 ```
+
+## AWS Services Overview
+
+```
+Step  Service               Responsibility
+───── ───────────────────── ───────────────────────────────────────────────
+1     ECR                   Hosts and versions the Docker image
+2     ECS                   Deploys and runs the containerized application
+3     RDS (PostgreSQL)      Stores folders and file metadata
+4     API Gateway           Exposes public HTTP endpoints and routes traffic to ECS
+5     S3                    Stores actual file objects (binary storage)
+6     Cognito               Handles user authentication and JWT issuance
+```
+
