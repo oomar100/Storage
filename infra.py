@@ -27,8 +27,8 @@ CONTAINER_PORT   = 8080
 REGION           = "us-west-1"
 VPC_ID           = "EMPTY"
 # Cognito — fill these in
-COGNITO_USER_POOL_ID = "EMPTY"          # e.g. us-east-1_Ab12Cd34E
-COGNITO_APP_CLIENT_ID = "EMPTY"   # your app client id
+COGNITO_USER_POOL_ID = "EMPTY"         
+COGNITO_APP_CLIENT_ID = "EMPTY" 
 # ===============================================================
 
 COGNITO_ISSUER = f"https://cognito-idp.{REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}"
