@@ -26,7 +26,7 @@ IMAGE_TAG        = "latest"
 CONTAINER_PORT   = 8080
 REGION           = "us-west-1"
 VPC_ID           = "EMPTY"
-# Cognito — fill these in
+
 COGNITO_USER_POOL_ID = "EMPTY"         
 COGNITO_APP_CLIENT_ID = "EMPTY" 
 # ===============================================================
